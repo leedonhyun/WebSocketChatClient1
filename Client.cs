@@ -14,14 +14,15 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 
+
 // ==================== 메인 클라이언트 클래스 ====================
 namespace ChatSystem.Client
 {
     public class ChatClient : IChatClient, IDisposable
     {
-        // Constants
-        private const string DEFAULT_SERVER_URL = "ws://localhost:5106/ws";
-        private const string ROOM_PREFIX = "ROOM:";
+        // ClientConstants
+        private const string DEFAULT_SERVER_URL = ClientConstants.DefaultServerUrl;
+        private const string ROOM_PREFIX = ClientConstants.RoomPrefix;
 
         private readonly IConnectionManager _connectionManager;
         private readonly IFileManager _fileManager;
@@ -66,13 +67,13 @@ namespace ChatSystem.Client
                 chatProc.MessageReceived += msg => MessageReceived?.Invoke(msg);
                 chatProc.RoomJoined += roomId => {
                     _currentRoom = roomId;
-                    StatusChanged?.Invoke($"Current room set to: {roomId}");
+                    StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.RoomJoined, roomId));
                 };
                 chatProc.RoomLeft += roomId => {
                     if (_currentRoom == roomId)
                     {
                         _currentRoom = null;
-                        StatusChanged?.Invoke("Left current room");
+                        StatusChanged?.Invoke(ClientConstants.StatusMessages.RoomLeft);
                     }
                 };
             }
@@ -108,7 +109,7 @@ namespace ChatSystem.Client
 
             var chatMessage = new ChatMessage
             {
-                Type = "chat",
+                Type = ClientConstants.MessageTypes.Chat,
                 Message = message,
                 Timestamp = DateTime.UtcNow
             };
@@ -122,13 +123,13 @@ namespace ChatSystem.Client
 
             var chatMessage = new ChatMessage
             {
-                Type = "privateMessage",
+                Type = ClientConstants.MessageTypes.PrivateMessage,
                 Message = $"@{toUsername}: {message}",
                 Timestamp = DateTime.UtcNow
             };
 
             await SendChatMessageAsync(chatMessage);
-            StatusChanged?.Invoke($"Private message sent to {toUsername}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.PrivateMessageSent, toUsername));
         }
 
         public async Task SendRoomMessageAsync(string message, string roomId)
@@ -137,14 +138,14 @@ namespace ChatSystem.Client
 
             var chatMessage = new ChatMessage
             {
-                Type = "chat",
+                Type = ClientConstants.MessageTypes.Chat,
                 Message = $"roomMessage {roomId} {message}",
                 Username = _username,
                 Timestamp = DateTime.UtcNow
             };
 
             await SendChatMessageAsync(chatMessage);
-            StatusChanged?.Invoke($"Message sent to room '{roomId}': {message}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.RoomMessageSent, roomId, message));
         }
 
         public async Task SendFileAsync(string filePath, string? toUsername = null, bool autoAccept = false, string? roomId = null)
@@ -154,14 +155,14 @@ namespace ChatSystem.Client
             try
             {
                 var uploadResult = await _fileManager.UploadFileAsync(filePath);
-                StatusChanged?.Invoke($"Uploading file to server: {uploadResult.FileName} (ID: {uploadResult.FileId})");
+                StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileUploading, uploadResult.FileName, uploadResult.FileId));
 
                 // 파일 업로드
                 for (int i = 0; i < uploadResult.Chunks.Count; i++)
                 {
                     var uploadMessage = new FileTransferMessage
                     {
-                        Type = "fileUpload",
+                        Type = ClientConstants.MessageTypes.FileUpload,
                         FileId = uploadResult.FileId,
                         FileInfo = new FileTransferInfo
                         {
@@ -179,13 +180,13 @@ namespace ChatSystem.Client
 
                     await SendFileMessageAsync(uploadMessage);
                     var progress = (double)(i + 1) / uploadResult.Chunks.Count * 100;
-                    StatusChanged?.Invoke($"Uploading: {uploadResult.FileName} - {progress:F1}%");
+                    StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileUploadProgress, uploadResult.FileName, progress));
                 }
 
                 // 업로드 완료
                 var completeMessage = new FileTransferMessage
                 {
-                    Type = "fileUploadComplete",
+                    Type = ClientConstants.MessageTypes.FileUploadComplete,
                     FileId = uploadResult.FileId,
                     FileInfo = new FileTransferInfo
                     {
@@ -199,12 +200,12 @@ namespace ChatSystem.Client
                 };
 
                 await SendFileMessageAsync(completeMessage);
-                StatusChanged?.Invoke($"File upload completed: {uploadResult.FileName} (ID: {uploadResult.FileId}). Sending offer...");
+                StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileUploadComplete, uploadResult.FileName, uploadResult.FileId));
 
                 // 파일 제안
                 var offerMessage = new FileTransferMessage
                 {
-                    Type = autoAccept ? "fileOfferAuto" : "fileOffer",
+                    Type = autoAccept ? ClientConstants.MessageTypes.FileOfferAuto : ClientConstants.MessageTypes.FileOffer,
                     FileId = uploadResult.FileId,
                     FileInfo = new FileTransferInfo
                     {
@@ -220,22 +221,23 @@ namespace ChatSystem.Client
 
                 await SendFileMessageAsync(offerMessage);
                 var target = !string.IsNullOrEmpty(roomId) ? $"room '{roomId}'" : $"user '{toUsername}'";
-                StatusChanged?.Invoke($"{(autoAccept ? "Auto-accept " : "")}File offer sent to {target}: {uploadResult.FileName}");
-                StatusChanged?.Invoke($"File ID: {uploadResult.FileId} - Recipients can use '/accept {uploadResult.FileId}' to download");
+                var autoAcceptPrefix = autoAccept ? "Auto-accept " : "";
+                StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileOfferSent, autoAcceptPrefix, target, uploadResult.FileName));
+                StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileOfferInfo, uploadResult.FileId));
             }
             catch (FileNotFoundException ex)
             {
-                StatusChanged?.Invoke($"File not found: {filePath}");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.FileNotFound, filePath));
                 _logger.LogError(ex, "File not found when sending file: {FilePath}", filePath);
             }
             catch (UnauthorizedAccessException ex)
             {
-                StatusChanged?.Invoke($"Access denied: Cannot read file {filePath}");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.AccessDenied, filePath));
                 _logger.LogError(ex, "Access denied when reading file: {FilePath}", filePath);
             }
             catch (Exception ex)
             {
-                StatusChanged?.Invoke($"File send error: {ex.Message}");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.FileSendError, ex.Message));
                 _logger.LogError(ex, "Error sending file: {FilePath}", filePath);
             }
         }
@@ -246,13 +248,13 @@ namespace ChatSystem.Client
 
             var acceptMessage = new FileTransferMessage
             {
-                Type = "fileAccept",
+                Type = ClientConstants.MessageTypes.FileAccept,
                 FileId = fileId,
                 Timestamp = DateTime.UtcNow
             };
 
             await SendFileMessageAsync(acceptMessage);
-            StatusChanged?.Invoke($"File accepted: {fileId}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileAccepted, fileId));
         }
 
         public async Task RejectFileAsync(string fileId)
@@ -261,13 +263,13 @@ namespace ChatSystem.Client
 
             var rejectMessage = new FileTransferMessage
             {
-                Type = "fileReject",
+                Type = ClientConstants.MessageTypes.FileReject,
                 FileId = fileId,
                 Timestamp = DateTime.UtcNow
             };
 
             await SendFileMessageAsync(rejectMessage);
-            StatusChanged?.Invoke($"File rejected: {fileId}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.FileRejected, fileId));
         }
 
         public async Task SetUsernameAsync(string username)
@@ -284,13 +286,13 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "setUsername",
+                Type = ClientConstants.MessageTypes.SetUsername,
                 Message = username,
                 Timestamp = DateTime.UtcNow
             };
 
             await SendChatMessageAsync(message);
-            StatusChanged?.Invoke($"Username set to: {username}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.UsernameSet, username));
         }
 
         public async Task GetUserListAsync()
@@ -299,7 +301,7 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "listUsers",
+                Type = ClientConstants.MessageTypes.ListUsers,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -314,13 +316,13 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "createRoom",
-                Message = $"{roomName}|{description}|{isPrivate}|{password ?? ""}",
+                Type = ClientConstants.MessageTypes.CreateRoom,
+                Message = $"{roomName}{ClientConstants.CommandArgSeparator}{description}{ClientConstants.CommandArgSeparator}{isPrivate}{ClientConstants.CommandArgSeparator}{password ?? ""}",
                 Timestamp = DateTime.UtcNow
             };
 
             await SendChatMessageAsync(message);
-            StatusChanged?.Invoke($"Creating room: {roomName}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.RoomCreating, roomName));
         }
 
         public async Task JoinRoomAsync(string roomId, string? password = null)
@@ -329,8 +331,8 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "joinRoom",
-                Message = $"{roomId}|{password ?? ""}",
+                Type = ClientConstants.MessageTypes.JoinRoom,
+                Message = $"{roomId}{ClientConstants.CommandArgSeparator}{password ?? ""}",
                 Timestamp = DateTime.UtcNow
             };
 
@@ -338,7 +340,7 @@ namespace ChatSystem.Client
 
             // 성공적인 조인은 서버 응답에서 처리하지만, 일단 임시로 설정
             _currentRoom = roomId;
-            StatusChanged?.Invoke($"Joining room: {roomId}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.RoomJoining, roomId));
         }
 
         public async Task LeaveRoomAsync(string? roomId = null)
@@ -348,13 +350,13 @@ namespace ChatSystem.Client
             var targetRoom = roomId ?? _currentRoom;
             if (string.IsNullOrEmpty(targetRoom))
             {
-                StatusChanged?.Invoke("No room to leave");
+                StatusChanged?.Invoke(ClientConstants.ErrorMessages.NoRoomToLeave);
                 return;
             }
 
             var message = new ChatMessage
             {
-                Type = "leaveRoom",
+                Type = ClientConstants.MessageTypes.LeaveRoom,
                 Message = targetRoom,
                 Timestamp = DateTime.UtcNow
             };
@@ -366,7 +368,7 @@ namespace ChatSystem.Client
                 _currentRoom = null;
             }
 
-            StatusChanged?.Invoke($"Left room: {targetRoom}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.RoomLeftTarget, targetRoom));
         }
 
         public async Task GetRoomListAsync()
@@ -375,7 +377,7 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "listRooms",
+                Type = ClientConstants.MessageTypes.ListRooms,
                 Timestamp = DateTime.UtcNow
             };
 
@@ -389,13 +391,13 @@ namespace ChatSystem.Client
             var targetRoom = roomId ?? _currentRoom;
             if (string.IsNullOrEmpty(targetRoom))
             {
-                StatusChanged?.Invoke("No room specified");
+                StatusChanged?.Invoke(ClientConstants.ErrorMessages.NoRoomSpecified);
                 return;
             }
 
             var message = new ChatMessage
             {
-                Type = "listRoomMembers",
+                Type = ClientConstants.MessageTypes.ListRoomMembers,
                 Message = targetRoom,
                 Timestamp = DateTime.UtcNow
             };
@@ -409,13 +411,13 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "inviteToRoom",
-                Message = $"{roomId}|{username}",
+                Type = ClientConstants.MessageTypes.InviteToRoom,
+                Message = $"{roomId}{ClientConstants.CommandArgSeparator}{username}",
                 Timestamp = DateTime.UtcNow
             };
 
             await SendChatMessageAsync(message);
-            StatusChanged?.Invoke($"Inviting {username} to room {roomId}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.InvitingUser, username, roomId));
         }
 
         public async Task KickFromRoomAsync(string roomId, string username)
@@ -424,13 +426,13 @@ namespace ChatSystem.Client
 
             var message = new ChatMessage
             {
-                Type = "kickFromRoom",
-                Message = $"{roomId}|{username}",
+                Type = ClientConstants.MessageTypes.KickFromRoom,
+                Message = $"{roomId}{ClientConstants.CommandArgSeparator}{username}",
                 Timestamp = DateTime.UtcNow
             };
 
             await SendChatMessageAsync(message);
-            StatusChanged?.Invoke($"Kicking {username} from room {roomId}");
+            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.KickingUser, username, roomId));
         }
 
         // =============== Helper 메서드들 ===============
@@ -447,7 +449,7 @@ namespace ChatSystem.Client
         private bool ValidateConnection()
         {
             if (IsConnected) return true;
-            StatusChanged?.Invoke("❌ Not connected to server. Use /connect to connect first.");
+            StatusChanged?.Invoke(ClientConstants.ErrorMessages.NotConnected);
             return false;
         }
 
@@ -459,31 +461,10 @@ namespace ChatSystem.Client
 
         private void ShowHelp()
         {
-            StatusChanged?.Invoke("=== Available Commands ===");
-            StatusChanged?.Invoke("Basic Commands:");
-            StatusChanged?.Invoke("  /connect [url] - Connect to server");
-            StatusChanged?.Invoke("  /disconnect - Disconnect from server");
-            StatusChanged?.Invoke("  /username <name> - Set username");
-            StatusChanged?.Invoke("  /users - List online users");
-            StatusChanged?.Invoke("  /help or /? - Show this help");
-            StatusChanged?.Invoke("");
-            StatusChanged?.Invoke("Chat Commands:");
-            StatusChanged?.Invoke("  /msg <user> <message> - Send private message");
-            StatusChanged?.Invoke("  /room <roomid> <message> - Send message to specific room");
-            StatusChanged?.Invoke("");
-            StatusChanged?.Invoke("Room Commands:");
-            StatusChanged?.Invoke("  /create <name> [desc] [-private] [-password <pwd>] - Create room");
-            StatusChanged?.Invoke("  /join <roomid> [password] - Join room");
-            StatusChanged?.Invoke("  /leave [roomid] - Leave room");
-            StatusChanged?.Invoke("  /rooms - List available rooms");
-            StatusChanged?.Invoke("  /members [roomid] - List room members");
-            StatusChanged?.Invoke("  /invite <roomid> <user> - Invite user to room");
-            StatusChanged?.Invoke("  /kick <roomid> <user> - Kick user from room");
-            StatusChanged?.Invoke("");
-            StatusChanged?.Invoke("File Commands:");
-            StatusChanged?.Invoke("  /send [-a] <filepath> [username|roomid] - Send file to user or room");
-            StatusChanged?.Invoke("  /accept <fileId> - Accept incoming file");
-            StatusChanged?.Invoke("  /reject <fileId> - Reject incoming file");
+            foreach (var line in ClientConstants.HelpText)
+            {
+                StatusChanged?.Invoke(line);
+            }
         }
 
         // 명령어 처리 메서드
@@ -492,36 +473,36 @@ namespace ChatSystem.Client
             var parsed = _commandParser.Parse(input);
             if (!parsed.IsValid)
             {
-                StatusChanged?.Invoke($"Invalid command: {parsed.ErrorMessage}");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.InvalidCommand, parsed.ErrorMessage));
                 return;
             }
 
             switch (parsed.Command)
             {
-                case "connect":
+                case ClientConstants.Commands.Connect:
                     var url = parsed.Arguments.Length > 0 ? parsed.Arguments[0] : DEFAULT_SERVER_URL;
                     await ConnectAsync(url);
                     break;
 
-                case "disconnect":
+                case ClientConstants.Commands.Disconnect:
                     await DisconnectAsync();
                     break;
 
-                case "username":
+                case ClientConstants.Commands.Username:
                     if (parsed.Arguments.Length > 0)
                         await SetUsernameAsync(string.Join(" ", parsed.Arguments));
                     break;
 
-                case "users":
+                case ClientConstants.Commands.Users:
                     await GetUserListAsync();
                     break;
 
-                case "help":
-                case "?":
+                case ClientConstants.Commands.Help:
+                case ClientConstants.Commands.HelpAlt:
                     ShowHelp();
                     break;
 
-                case "send":
+                case ClientConstants.Commands.Send:
                     if (parsed.Arguments.Length > 0)
                     {
                         var filePath = parsed.Arguments[0];
@@ -549,31 +530,31 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /send [-a] <filepath> [username|roomid]");
-                        StatusChanged?.Invoke("Examples:");
-                        StatusChanged?.Invoke("  /send myfile.txt - Send to public (all users)");
-                        StatusChanged?.Invoke("  /send myfile.txt john - Send to user 'john'");
-                        StatusChanged?.Invoke("  /send myfile.txt room123 - Send to room 'room123'");
-                        StatusChanged?.Invoke("  /send -a myfile.txt john - Auto-accept for user 'john'");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.SendUsage);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.SendExamplesHeader);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.SendExamplePublic);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.SendExampleUser);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.SendExampleRoom);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.SendExampleAuto);
                     }
                     break;
 
-                case "accept":
+                case ClientConstants.Commands.Accept:
                     if (parsed.Arguments.Length > 0)
                         await AcceptFileAsync(parsed.Arguments[0]);
                     break;
 
-                case "reject":
+                case ClientConstants.Commands.Reject:
                     if (parsed.Arguments.Length > 0)
                         await RejectFileAsync(parsed.Arguments[0]);
                     break;
 
                 // =============== 그룹 채팅 명령어 ===============
 
-                case "msg":
-                case "pm":
-                case "private":
-                case "privateMessage":
+                case ClientConstants.Commands.Msg:
+                case ClientConstants.Commands.Pm:
+                case ClientConstants.Commands.Private:
+                case ClientConstants.Commands.PrivateMessage:
                     if (parsed.Arguments.Length >= 2)
                     {
                         var targetUser = parsed.Arguments[0];
@@ -582,14 +563,14 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /msg <username> <message>");
-                        StatusChanged?.Invoke("  Example: /msg john Hello there!");
-                        StatusChanged?.Invoke("  Aliases: /pm, /private, /privateMessage");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageUsage);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageExample);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageAliases);
                     }
                     break;
 
-                case "create":
-                case "createroom":
+                case ClientConstants.Commands.Create:
+                case ClientConstants.Commands.CreateRoom:
                     if (parsed.Arguments.Length > 0)
                     {
                         var roomName = parsed.Arguments[0];
@@ -600,13 +581,13 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /create <roomname> [description] [-private] [-password <pwd>]");
-                        StatusChanged?.Invoke("  Example: /create myroom \"My cool room\" -private -password secret123");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.CreateRoomUsage);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.CreateRoomExample);
                     }
                     break;
 
-                case "join":
-                case "joinroom":
+                case ClientConstants.Commands.Join:
+                case ClientConstants.Commands.JoinRoom:
                     if (parsed.Arguments.Length > 0)
                     {
                         var roomId = parsed.Arguments[0];
@@ -615,29 +596,29 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /join <roomid> [password]");
-                        StatusChanged?.Invoke("  Example: /join room123 mypassword");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.JoinRoomUsage);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.JoinRoomExample);
                     }
                     break;
 
-                case "leave":
-                case "leaveroom":
+                case ClientConstants.Commands.Leave:
+                case ClientConstants.Commands.LeaveRoom:
                     var targetRoomId = parsed.Arguments.Length > 0 ? parsed.Arguments[0] : null;
                     await LeaveRoomAsync(targetRoomId);
                     break;
 
-                case "rooms":
-                case "listrooms":
+                case ClientConstants.Commands.Rooms:
+                case ClientConstants.Commands.ListRooms:
                     await GetRoomListAsync();
                     break;
 
-                case "members":
-                case "roommembers":
+                case ClientConstants.Commands.Members:
+                case ClientConstants.Commands.RoomMembers:
                     var roomForMembers = parsed.Arguments.Length > 0 ? parsed.Arguments[0] : null;
                     await GetRoomMembersAsync(roomForMembers);
                     break;
 
-                case "invite":
+                case ClientConstants.Commands.Invite:
                     if (parsed.Arguments.Length >= 2)
                     {
                         var roomId = parsed.Arguments[0];
@@ -646,11 +627,11 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /invite <roomid> <username>");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.InviteUsage);
                     }
                     break;
 
-                case "kick":
+                case ClientConstants.Commands.Kick:
                     if (parsed.Arguments.Length >= 2)
                     {
                         var roomId = parsed.Arguments[0];
@@ -659,11 +640,11 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /kick <roomid> <username>");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.KickUsage);
                     }
                     break;
 
-                case "room":
+                case ClientConstants.Commands.Room:
                     if (parsed.Arguments.Length >= 2)
                     {
                         var roomId = parsed.Arguments[0];
@@ -678,18 +659,18 @@ namespace ChatSystem.Client
                     }
                     else
                     {
-                        StatusChanged?.Invoke("Usage: /room <roomid> <message>");
-                        StatusChanged?.Invoke("  Or if you're in a room: /room <message>");
-                        StatusChanged?.Invoke("  Example: /room general Hello everyone!");
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.RoomMessageUsage);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.RoomMessageAltUsage);
+                        StatusChanged?.Invoke(ClientConstants.UsageMessages.RoomMessageExample);
                         if (!string.IsNullOrEmpty(_currentRoom))
                         {
-                            StatusChanged?.Invoke($"  Current room: {_currentRoom}");
+                            StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.CurrentRoomInfo, _currentRoom));
                         }
                     }
                     break;
 
                 default:
-                    StatusChanged?.Invoke($"Unknown command: {parsed.Command}");
+                    StatusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.UnknownCommand, parsed.Command));
                     break;
             }
         }
@@ -753,7 +734,7 @@ namespace ChatSystem.Client
                             }
                             catch (JsonException ex)
                             {
-                                _logger.LogError(ex, "Failed to parse chat message");
+                                _logger.LogError(ex, ClientConstants.ErrorMessages.LogParseChatMessageFailed);
                             }
                         }
                     }
@@ -761,7 +742,7 @@ namespace ChatSystem.Client
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error receiving messages");
+                _logger.LogError(ex, ClientConstants.ErrorMessages.LogReceiveMessageError);
             }
         }
 
@@ -802,7 +783,7 @@ namespace ChatSystem.Client
                             }
                             catch (JsonException ex)
                             {
-                                _logger.LogError(ex, "Failed to parse file message");
+                                _logger.LogError(ex, ClientConstants.ErrorMessages.LogParseFileMessageFailed);
                             }
                         }
                     }
@@ -810,7 +791,7 @@ namespace ChatSystem.Client
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error receiving file transfers");
+                _logger.LogError(ex, ClientConstants.ErrorMessages.LogReceiveFileError);
             }
         }
 

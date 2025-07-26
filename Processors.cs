@@ -4,7 +4,7 @@ using ChatSystem.Models;
 using Microsoft.Extensions.Logging;
 
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +22,7 @@ namespace ChatSystem.Client.Processors
             // 방 관련 상태 변경 처리
             switch (message.Type)
             {
-                case "roomJoined":
+                case ClientConstants.MessageTypes.RoomJoined:
                     // 메시지에서 방 ID 추출 (예: "Successfully joined room: roomId")
                     var joinedRoomId = ExtractRoomIdFromMessage(message.Message);
                     if (!string.IsNullOrEmpty(joinedRoomId))
@@ -31,7 +31,7 @@ namespace ChatSystem.Client.Processors
                     }
                     break;
 
-                case "roomLeft":
+                case ClientConstants.MessageTypes.RoomLeft:
                     // 메시지에서 방 ID 추출
                     var leftRoomId = ExtractRoomIdFromMessage(message.Message);
                     if (!string.IsNullOrEmpty(leftRoomId))
@@ -48,9 +48,9 @@ namespace ChatSystem.Client.Processors
         private string ExtractRoomIdFromMessage(string message)
         {
             // 간단한 파싱 로직 - 실제로는 서버 응답 형식에 맞춰 수정 필요
-            if (message.Contains(":"))
+            if (message.Contains(ClientConstants.MessagePartSeparator))
             {
-                var parts = message.Split(':');
+                var parts = message.Split(ClientConstants.MessagePartSeparator);
                 if (parts.Length > 1)
                 {
                     return parts[1].Trim();
@@ -86,38 +86,38 @@ namespace ChatSystem.Client.Processors
         {
             try
             {
-                _logger.LogDebug($"Processing file message: {message.Type} for file {message.FileId}");
+                _logger.LogDebug(ClientConstants.ProcessorMessages.LogProcessingFileMessage, message.Type, message.FileId);
 
                 switch (message.Type)
                 {
-                    case "fileOffer":
+                    case ClientConstants.MessageTypes.FileOffer:
                         await HandleFileOfferAsync(message);
                         break;
-                    case "fileAccept":
-                        StatusChanged?.Invoke($"File accepted by {message.FromUsername}");
+                    case ClientConstants.MessageTypes.FileAccept:
+                        StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusFileAccepted, message.FromUsername));
                         break;
-                    case "fileReject":
-                        StatusChanged?.Invoke($"File rejected by {message.FromUsername}");
+                    case ClientConstants.MessageTypes.FileReject:
+                        StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusFileRejected, message.FromUsername));
                         break;
-                    case "fileError":
-                        StatusChanged?.Invoke($"❌ File transfer error: {message.ToUsername}");
+                    case ClientConstants.MessageTypes.FileError:
+                        StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusFileError, message.ToUsername));
                         _incomingFiles.Remove(message.FileId);
                         break;
-                    case "fileData":
+                    case ClientConstants.MessageTypes.FileData:
                         await HandleFileDataAsync(message);
                         break;
-                    case "fileComplete":
+                    case ClientConstants.MessageTypes.FileComplete:
                         await HandleFileCompleteAsync(message);
                         break;
                     default:
-                        _logger.LogWarning($"Unknown file transfer message type: {message.Type}");
+                        _logger.LogWarning(ClientConstants.ProcessorMessages.LogUnknownFileType, message.Type);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing file transfer message");
-                StatusChanged?.Invoke($"Error processing file transfer: {ex.Message}");
+                _logger.LogError(ex, ClientConstants.ProcessorMessages.LogProcessingError);
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusProcessingError, ex.Message));
             }
         }
 
@@ -126,7 +126,7 @@ namespace ChatSystem.Client.Processors
             if (message.FileInfo != null)
             {
                 _incomingFiles[message.FileId] = message.FileInfo;
-                StatusChanged?.Invoke($"File offer received: {message.FileInfo.FileName}");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusFileOfferReceived, message.FileInfo.FileName));
                 FileOfferReceived?.Invoke(message.FileInfo);
             }
             await Task.CompletedTask;
@@ -137,7 +137,7 @@ namespace ChatSystem.Client.Processors
             if (message.FileInfo != null && !_incomingFiles.ContainsKey(message.FileId))
             {
                 _incomingFiles[message.FileId] = message.FileInfo;
-                StatusChanged?.Invoke($"🔄 Auto-downloading: {message.FileInfo.FileName} from {message.FileInfo.FromUsername}");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusAutoDownloading, message.FileInfo.FileName, message.FileInfo.FromUsername));
             }
             else if (!string.IsNullOrEmpty(message.FromUsername) && _incomingFiles.TryGetValue(message.FileId, out var existingFileInfo))
             {
@@ -149,7 +149,7 @@ namespace ChatSystem.Client.Processors
                 // 보낸 사람의 사용자명으로 폴더 생성
                 await _fileManager.SaveFileAsync(fileInfo.FileName, message.Data, fileInfo.FromUsername);
 
-                StatusChanged?.Invoke($"Chunk {message.ChunkIndex + 1}/{message.TotalChunks} saved");
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusChunkSaved, message.ChunkIndex + 1, message.TotalChunks));
                 FileTransferProgress?.Invoke(message.FileId, message.ChunkIndex + 1, message.TotalChunks);
             }
         }
@@ -170,23 +170,23 @@ namespace ChatSystem.Client.Processors
                 var downloadPath = _fileManager.GetDownloadPath(fileInfo.FromUsername); // 보낸 사람의 폴더
                 var filePath = Path.Combine(downloadPath, fileInfo.FileName);
 
-                StatusChanged?.Invoke($"✅ File download completed!");
-                StatusChanged?.Invoke($"👤 From: {fileInfo.FromUsername}");
-                StatusChanged?.Invoke($"📁 File: {fileInfo.FileName}");
-                StatusChanged?.Invoke($"📍 Location: {Path.GetFullPath(filePath)}");
+                StatusChanged?.Invoke(ClientConstants.ProcessorMessages.StatusDownloadComplete);
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusDownloadFrom, fileInfo.FromUsername));
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusDownloadFile, fileInfo.FileName));
+                StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusDownloadLocation, Path.GetFullPath(filePath)));
 
                 if (File.Exists(filePath))
                 {
                     var actualSize = new FileInfo(filePath).Length;
-                    StatusChanged?.Invoke($"📏 Size: {actualSize:N0} bytes");
+                    StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusDownloadSize, actualSize));
 
                     if (actualSize == fileInfo.FileSize)
                     {
-                        StatusChanged?.Invoke($"✅ File integrity verified!");
+                        StatusChanged?.Invoke(ClientConstants.ProcessorMessages.StatusIntegrityVerified);
                     }
                     else
                     {
-                        StatusChanged?.Invoke($"⚠️ WARNING: Size mismatch! Expected {fileInfo.FileSize:N0}, got {actualSize:N0}");
+                        StatusChanged?.Invoke(string.Format(ClientConstants.ProcessorMessages.StatusIntegrityWarning, fileInfo.FileSize, actualSize));
                     }
                 }
 

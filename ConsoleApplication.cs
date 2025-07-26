@@ -28,40 +28,16 @@ public class ConsoleApplication
 
     public async Task RunAsync()
     {
-        System.Console.WriteLine("=== Advanced WebSocket Chat Client with Group Support ===");
-        System.Console.WriteLine("Basic Commands:");
-        System.Console.WriteLine("  /connect [url] - Connect to server");
-        System.Console.WriteLine("  /disconnect - Disconnect from server");
-        System.Console.WriteLine("  /username <name> - Set username");
-        System.Console.WriteLine("  /users - List online users");
-        System.Console.WriteLine("  /quit - Exit application");
+        System.Console.WriteLine(ClientConstants.ConsoleUI.WelcomeHeader);
+        foreach (var line in ClientConstants.ConsoleUI.HelpText)
+        {
+            System.Console.WriteLine(line);
+        }
         System.Console.WriteLine();
-        System.Console.WriteLine("Chat Commands:");
-        System.Console.WriteLine("  /msg <user> <message> - Send private message");
-        System.Console.WriteLine("  /pm <user> <message> - Send private message (alias)");
-        System.Console.WriteLine("  /private <user> <message> - Send private message (alias)");
-        System.Console.WriteLine("  /privateMessage <user> <message> - Send private message (alias)");
-        System.Console.WriteLine("  /room <roomid> <message> - Send message to specific room");
-        System.Console.WriteLine("  /room <message> - Send message to current room (if joined)");
-        System.Console.WriteLine();
-        System.Console.WriteLine("Room Commands:");
-        System.Console.WriteLine("  /create <name> [desc] [-private] [-password <pwd>] - Create room");
-        System.Console.WriteLine("  /join <roomid> [password] - Join room");
-        System.Console.WriteLine("  /leave [roomid] - Leave room");
-        System.Console.WriteLine("  /rooms - List available rooms");
-        System.Console.WriteLine("  /members [roomid] - List room members");
-        System.Console.WriteLine("  /invite <roomid> <user> - Invite user to room");
-        System.Console.WriteLine("  /kick <roomid> <user> - Kick user from room");
-        System.Console.WriteLine();
-        System.Console.WriteLine("File Commands:");
-        System.Console.WriteLine("  /send [-a] <filepath> [username|roomid] - Send file to user or room");
-        System.Console.WriteLine("  /accept <fileId> - Accept incoming file");
-        System.Console.WriteLine("  /reject <fileId> - Reject incoming file");
-        System.Console.WriteLine();
-        System.Console.WriteLine("Note: Any message not starting with '/' will be sent as public chat");
+        System.Console.WriteLine(ClientConstants.ConsoleUI.Note);
         if (!string.IsNullOrEmpty(_chatClient.CurrentRoom))
         {
-            System.Console.WriteLine($"       Currently in room: {_chatClient.CurrentRoom}");
+            System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.CurrentRoomInfo, _chatClient.CurrentRoom));
         }
         System.Console.WriteLine();
 
@@ -73,16 +49,16 @@ public class ConsoleApplication
             {
                 if (!string.IsNullOrEmpty(_chatClient.CurrentRoom))
                 {
-                    prompt = $"[{_chatClient.CurrentRoom}] > ";
+                    prompt = string.Format(ClientConstants.ConsoleUI.PromptRoomFormat, _chatClient.CurrentRoom);
                 }
                 else
                 {
-                    prompt = "[Public] > ";
+                    prompt = ClientConstants.ConsoleUI.PromptPublic;
                 }
             }
             else
             {
-                prompt = "[Disconnected] > ";
+                prompt = ClientConstants.ConsoleUI.PromptDisconnected;
             }
 
             System.Console.Write(prompt);
@@ -91,7 +67,7 @@ public class ConsoleApplication
 
             if (input.StartsWith("/"))
             {
-                if (input.Equals("/quit", StringComparison.OrdinalIgnoreCase))
+                if (input.Equals(ClientConstants.Commands.Quit, StringComparison.OrdinalIgnoreCase))
                 {
                     await _chatClient.DisconnectAsync();
                     break;
@@ -114,7 +90,7 @@ public class ConsoleApplication
                     }
                 }
                 else
-                    System.Console.WriteLine("Not connected to server. Use /connect to connect.");
+                    System.Console.WriteLine(ClientConstants.ErrorMessages.NotConnectedSimple);
             }
         }
     }
@@ -124,58 +100,58 @@ public class ConsoleApplication
         var timestamp = message.Timestamp.ToString("HH:mm:ss");
         switch (message.Type)
         {
-            case "system":
-                System.Console.WriteLine($"[{timestamp}] * {message.Message}");
+            case ClientConstants.MessageTypes.System:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.System, timestamp, message.Message));
                 break;
-            case "chat":
-                System.Console.WriteLine($"[{timestamp}] {message.Username}: {message.Message}");
+            case ClientConstants.MessageTypes.Chat:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Chat, timestamp, message.Username, message.Message));
                 break;
-            case "privateMessage":
-                System.Console.WriteLine($"[{timestamp}] [PRIVATE] {message.Username}: {message.Message}");
+            case ClientConstants.MessageTypes.PrivateMessage:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Private, timestamp, message.Username, message.Message));
                 break;
-            case "roomMessage":
-                System.Console.WriteLine($"[{timestamp}] [ROOM] {message.Username}: {message.Message}");
+            case ClientConstants.MessageTypes.RoomMessage:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Room, timestamp, message.Username, message.Message));
                 break;
-            case "userList":
-                System.Console.WriteLine($"[{timestamp}] Online users: {message.Message}");
+            case ClientConstants.MessageTypes.UserList:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.UserList, timestamp, message.Message));
                 break;
-            case "roomList":
-                System.Console.WriteLine($"[{timestamp}] Available rooms: {message.Message}");
+            case ClientConstants.MessageTypes.RoomList:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomList, timestamp, message.Message));
                 break;
-            case "roomMembers":
-                System.Console.WriteLine($"[{timestamp}] Room members: {message.Message}");
+            case ClientConstants.MessageTypes.RoomMembers:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomMembers, timestamp, message.Message));
                 break;
-            case "roomJoined":
-                System.Console.WriteLine($"[{timestamp}] ✓ Joined room: {message.Message}");
+            case ClientConstants.MessageTypes.RoomJoined:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomJoined, timestamp, message.Message));
                 break;
-            case "roomLeft":
-                System.Console.WriteLine($"[{timestamp}] ← Left room: {message.Message}");
+            case ClientConstants.MessageTypes.RoomLeft:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomLeft, timestamp, message.Message));
                 break;
-            case "roomCreated":
-                System.Console.WriteLine($"[{timestamp}] ✓ Room created: {message.Message}");
+            case ClientConstants.MessageTypes.RoomCreated:
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomCreated, timestamp, message.Message));
                 break;
             default:
-                System.Console.WriteLine($"[{timestamp}] {message.Username}: {message.Message}");
+                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Chat, timestamp, message.Username, message.Message));
                 break;
         }
     }
 
     private static void OnStatusChanged(string status)
     {
-        System.Console.WriteLine($"Status: {status}");
+        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.StatusFormat, status));
     }
 
     private void OnFileOfferReceived(FileTransferInfo fileInfo)
     {
         _pendingFiles[fileInfo.Id] = fileInfo;
 
-        System.Console.WriteLine($"\n*** FILE OFFER RECEIVED ***");
-        System.Console.WriteLine($"From: {fileInfo.FromUsername}");
-        System.Console.WriteLine($"File: {fileInfo.FileName}");
-        System.Console.WriteLine($"Size: {fileInfo.FileSize:N0} bytes");
-        System.Console.WriteLine($"File ID: {fileInfo.Id}");
-        System.Console.WriteLine($"*** READY FOR DOWNLOAD ***");
-        System.Console.WriteLine($"Use '/accept {fileInfo.Id}' to accept or '/reject {fileInfo.Id}' to reject");
+        System.Console.WriteLine(ClientConstants.ConsoleUI.FileOfferHeader);
+        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferFrom, fileInfo.FromUsername));
+        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferFile, fileInfo.FileName));
+        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferSize, fileInfo.FileSize));
+        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferId, fileInfo.Id));
+        System.Console.WriteLine(ClientConstants.ConsoleUI.FileOfferReady);
+        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferInstructions, fileInfo.Id));
         System.Console.WriteLine();
     }
 
@@ -184,7 +160,7 @@ public class ConsoleApplication
         if (_pendingFiles.TryGetValue(fileId, out var fileInfo))
         {
             var progress = (double)(chunkIndex + 1) / totalChunks * 100;
-            System.Console.WriteLine($"File transfer progress: {fileInfo.FileName} - {progress:F1}% ({chunkIndex + 1}/{totalChunks})");
+            System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileTransferProgress, fileInfo.FileName, progress, chunkIndex + 1, totalChunks));
         }
     }
 }

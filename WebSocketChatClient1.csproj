@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="ConsoleApplication.cs.backup" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\..\WebSocketChatServer1\WebSocketChatServer1\ChatSystem.Models.cs" Link="ChatSystem.Models.cs" />
   </ItemGroup>
 
