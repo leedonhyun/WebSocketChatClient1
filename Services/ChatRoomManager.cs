@@ -1,5 +1,4 @@
-﻿using ChatSystem.Client.Interfaces;
-using ChatSystem.Client.Models;
+﻿using ChatSystem.Client.Models;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -9,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using WebSocketChatClient1.Interfaces;
 
 namespace ChatSystem.Client.Services;
 

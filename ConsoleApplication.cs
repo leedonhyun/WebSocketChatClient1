@@ -1,11 +1,12 @@
-﻿using ChatSystem.Client.Interfaces;
-using ChatSystem.Models;
+﻿using ChatSystem.Models;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using WebSocketChatClient1.Interfaces;
 
 namespace ChatSystem.Client.Console;
 

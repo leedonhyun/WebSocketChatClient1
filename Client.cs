@@ -16,6 +16,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+using WebSocketChatClient1.Interfaces;
+
 
 
 // ==================== 메인 클라이언트 클래스 ====================

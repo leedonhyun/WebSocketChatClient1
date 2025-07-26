@@ -1,13 +1,10 @@
-ï»¿using ChatSystem.Client.Models;
+using ChatSystem.Client.Models;
 using ChatSystem.Models;
-
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace ChatSystem.Client.Interfaces;
+namespace WebSocketChatClient1.Interfaces;
 
 public interface IChatClient
 {
@@ -31,7 +28,7 @@ public interface IChatClient
     Task SetUsernameAsync(string username);
     Task GetUserListAsync();
 
-    // ê·¸ë£¹ ì±„íŒ… ê¸°ëŠ¥
+    // ±×·ì Ã¤ÆÃ ±â´É
     Task CreateRoomAsync(string roomName, string description = "", bool isPrivate = false, string? password = null);
     Task JoinRoomAsync(string roomId, string? password = null);
     Task LeaveRoomAsync(string? roomId = null);
@@ -39,40 +36,4 @@ public interface IChatClient
     Task GetRoomMembersAsync(string? roomId = null);
     Task InviteToRoomAsync(string roomId, string username);
     Task KickFromRoomAsync(string roomId, string username);
-}
-
-public interface IConnectionManager : IDisposable
-{
-    Task<bool> ConnectAsync(string serverUrl, CancellationToken cancellationToken);
-    Task DisconnectAsync();
-    bool IsConnected { get; }
-    event Action<string>? StatusChanged;
-}
-
-public interface IMessageProcessor<T> where T : BaseMessage
-{
-    Task ProcessAsync(T message);
-}
-
-public interface IFileManager
-{
-    Task<string> SaveFileAsync(string fileName, byte[] data, string? senderUsername = null);
-    Task<byte[]> ReadFileAsync(string filePath);
-    Task<FileUploadResult> UploadFileAsync(string filePath);
-    string GetDownloadPath(string? senderUsername = null);
-}
-
-public interface ICommandParser
-{
-    ParsedCommand Parse(string input);
-}
-
-public interface IChatRoomManager
-{
-    Task<List<ChatRoomInfo>> GetAvailableRoomsAsync();
-    Task<ChatRoom?> GetRoomInfoAsync(string roomId);
-    Task<List<string>> GetRoomMembersAsync(string roomId);
-    void UpdateCurrentRoom(string? roomId);
-    string? GetCurrentRoom();
-    event Action<string?>? CurrentRoomChanged;
 }
