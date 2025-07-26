@@ -132,90 +132,89 @@ public class CommandParser : ICommandParser
 {
     public ParsedCommand Parse(string input)
     {
-        if (string.IsNullOrWhiteSpace(input))
-            return new ParsedCommand { IsValid = false, ErrorMessage = "Empty input" };
-
-        if (!input.StartsWith("/"))
-            return new ParsedCommand { IsValid = false, ErrorMessage = "Not a command" };
-
-        try
+        if (string.IsNullOrWhiteSpace(input) || !input.StartsWith("/"))
         {
-            var parts = ParseCommandParts(input.Substring(1)); // Remove '/'
-            var command = parts[0].ToLower();
-            var args = parts.Skip(1).ToArray();
-            var options = new Dictionary<string, object>();
+            return new ParsedCommand { IsValid = false, ErrorMessage = "Commands must start with '/'." };
+        }
 
-            // Parse options (like -a, -private, -password value)
-            var filteredArgs = new List<string>();
-            for (int i = 0; i < args.Length; i++)
+        var commandAndArgs = ParseCommandParts(input.Substring(1));
+        if (commandAndArgs.Length == 0)
+        {
+            return new ParsedCommand { IsValid = false, ErrorMessage = "Empty command." };
+        }
+
+        var command = commandAndArgs[0].ToLower();
+        var arguments = new List<string>();
+        var options = new Dictionary<string, object>();
+
+        for (int i = 1; i < commandAndArgs.Length; i++)
+        {
+            var part = commandAndArgs[i];
+            if (part.StartsWith("-"))
             {
-                if (args[i].StartsWith("-"))
+                var key = part.TrimStart('-');
+                if (i + 1 < commandAndArgs.Length && !commandAndArgs[i + 1].StartsWith("-"))
                 {
-                    var option = args[i].Substring(1);
-
-                    // Check if next argument is a value for this option
-                    if (i + 1 < args.Length && !args[i + 1].StartsWith("-"))
+                    if (key.Equals("password", StringComparison.OrdinalIgnoreCase))
                     {
-                        // This is a key-value option like -password mypass
-                        options[option] = args[i + 1];
-                        i++; // Skip the value argument
+                        options[key] = commandAndArgs[i + 1];
+                        i++;
                     }
                     else
                     {
-                        // This is a flag option like -private
-                        options[option] = true;
+                        options[key] = true;
                     }
                 }
                 else
                 {
-                    filteredArgs.Add(args[i]);
+                    options[key] = true;
                 }
             }
-
-            return new ParsedCommand
+            else
             {
-                Command = command,
-                Arguments = filteredArgs.ToArray(),
-                Options = options,
-                IsValid = true
-            };
+                arguments.Add(part);
+            }
         }
-        catch (Exception ex)
+
+        return new ParsedCommand
         {
-            return new ParsedCommand { IsValid = false, ErrorMessage = ex.Message };
-        }
+            Command = command,
+            Arguments = arguments.ToArray(),
+            Options = options,
+            IsValid = true
+        };
     }
 
     private static string[] ParseCommandParts(string input)
     {
         var parts = new List<string>();
-        var current = new StringBuilder();
+        var currentPart = new StringBuilder();
         bool inQuotes = false;
 
-        for (int i = 0; i < input.Length; i++)
+        foreach (char c in input)
         {
-            char c = input[i];
-
-            if (c == '"' && (i == 0 || input[i - 1] != '\\'))
+            if (c == '"')
             {
                 inQuotes = !inQuotes;
             }
             else if (c == ' ' && !inQuotes)
             {
-                if (current.Length > 0)
+                if (currentPart.Length > 0)
                 {
-                    parts.Add(current.ToString());
-                    current.Clear();
+                    parts.Add(currentPart.ToString());
+                    currentPart.Clear();
                 }
             }
             else
             {
-                current.Append(c);
+                currentPart.Append(c);
             }
         }
 
-        if (current.Length > 0)
-            parts.Add(current.ToString());
+        if (currentPart.Length > 0)
+        {
+            parts.Add(currentPart.ToString());
+        }
 
         return parts.ToArray();
     }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
+
 namespace ChatSystem.Client.Commands
 {
     // Base class to provide access to the client and status updates
@@ -77,10 +78,11 @@ namespace ChatSystem.Client.Commands
 
         public override Task ExecuteAsync(string[] args, Dictionary<string, object> options)
         {
+            var autoAccept = options.ContainsKey("a");
+
             if (args.Length > 0)
             {
                 var filePath = args[0];
-                var autoAccept = options.ContainsKey("a");
                 string? targetUser = null;
                 string? roomId = null;
 
