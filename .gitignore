@@ -84,3 +84,4 @@ downloads/
 *.backup
 *.bk
 
+/ConsoleApplication.cs.backup
