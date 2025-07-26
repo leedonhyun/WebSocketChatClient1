@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <Compile Remove="Class1.cs" />
+    <Compile Remove="Services.cs" />
   </ItemGroup>
 
   <ItemGroup>
