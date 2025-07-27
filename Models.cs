@@ -90,7 +90,7 @@ public enum ChatRoomType
 {
     Public = 0,
     Private = 1,
-    Group = 2,
+    Room = 2,
     DirectMessage = 3
 }
 

@@ -64,7 +64,8 @@ public class ChatHandler : IChatHandler
     {
         if (!_isConnected()) return Task.CompletedTask;
         var chatMessage = new ChatMessage { Type = ChatConstants.MessageTypes.RoomMessage,
-            Message = $"roomMessage {roomId} {message}", Username = _getUsername(), Timestamp = DateTime.UtcNow };
+            Message = $"roomMessage {roomId} {message}", 
+            RoomId= roomId, Username = _getUsername(), Timestamp = DateTime.UtcNow };
         _statusChanged(string.Format(ChatConstants.StatusMessages.RoomMessageSent, roomId, message));
         return SendChatMessageAsync(chatMessage);
     }

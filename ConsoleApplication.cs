@@ -79,7 +79,6 @@ namespace WebSocketChatClient1
                 case ChatConstants.MessageTypes.PrivateMessage:// "privateChat":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] (private) {message.Username} to {message.ToUsername}: {message.Message}";
                     break;
-                //case "groupChat":
                 case ChatConstants.MessageTypes.RoomMessage:// "roomMessage":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] (room: {message.RoomId}) {message.Username}: {message.Message}";
                     break;
