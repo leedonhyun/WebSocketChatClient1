@@ -73,7 +73,7 @@ public class ChatHandler : IChatHandler
     {
         if (!_isConnected()) return Task.CompletedTask;
         _setUsername(username);
-        var message = new ChatMessage { Type = ChatConstants.MessageTypes.SetUsername, Message = username, Timestamp = DateTime.UtcNow };
+        var message = new ChatMessage { Type = ChatConstants.MessageTypes.SetUserName, Message = username, Timestamp = DateTime.UtcNow };
         _statusChanged(string.Format(ChatConstants.StatusMessages.UsernameSet, username));
         return SendChatMessageAsync(message);
     }
@@ -88,7 +88,8 @@ public class ChatHandler : IChatHandler
     public Task CreateRoomAsync(string roomName, string description = "", bool isPrivate = false, string? password = null)
     {
         if (!_isConnected()) return Task.CompletedTask;
-        var message = new ChatMessage { Type = ChatConstants.MessageTypes.CreateRoom, Message = $"{roomName}{ChatConstants.CommandArgSeparator}{description}{ChatConstants.CommandArgSeparator}{isPrivate}{ChatConstants.CommandArgSeparator}{password ?? ""}", Timestamp = DateTime.UtcNow };
+        var message = new ChatMessage { Type = ChatConstants.MessageTypes.CreateRoom,
+            Message = $"{roomName}{ChatConstants.CommandArgSeparator}{description}{ChatConstants.CommandArgSeparator}{isPrivate}{ChatConstants.CommandArgSeparator}{password ?? ""}", Timestamp = DateTime.UtcNow };
         _statusChanged(string.Format(ChatConstants.StatusMessages.RoomCreating, roomName));
         return SendChatMessageAsync(message);
     }

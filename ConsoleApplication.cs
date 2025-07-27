@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using WebSocketChatClient1.Client;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
 using WebSocketChatShared.Models;
 
 namespace WebSocketChatClient1
@@ -72,20 +73,20 @@ namespace WebSocketChatClient1
             var displayMessage = "";
             switch (message.Type)
             {
-                case "chat":
+                case ChatConstants.MessageTypes.Chat:// "chat":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] {message.Username}: {message.Message}";
                     break;
-                case "privateChat":
+                case ChatConstants.MessageTypes.PrivateMessage:// "privateChat":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] (private) {message.Username} to {message.ToUsername}: {message.Message}";
                     break;
-                case "groupChat":
-                case "roomChat":
+                //case "groupChat":
+                case ChatConstants.MessageTypes.RoomMessage:// "roomMessage":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] (room: {message.RoomId}) {message.Username}: {message.Message}";
                     break;
-                case "system":
+                case ChatConstants.MessageTypes.System:// "system":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] [SYSTEM] {message.Message}";
                     break;
-                case "error":
+                case ChatConstants.MessageTypes.Error:// "error":
                     displayMessage = $"[{message.Timestamp:HH:mm:ss}] [ERROR] {message.Message}";
                     break;
                 default:
