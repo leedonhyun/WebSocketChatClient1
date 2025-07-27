@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 public class InviteToRoomCommand : CommandBase
@@ -18,7 +20,7 @@ public class InviteToRoomCommand : CommandBase
             return _client.InviteToRoomAsync(roomId, username);
         }
         
-        _statusChanged(ClientConstants.UsageMessages.InviteUsage);
+        _statusChanged(ChatConstants.UsageMessages.InviteUsage);
         return Task.CompletedTask;
     }
 }

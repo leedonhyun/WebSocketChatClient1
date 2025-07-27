@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 /// <summary>
@@ -41,7 +43,7 @@ public class CommandHandler
         //var (commandName, args) = _commandParser.Parse(input);
         if (!parsed.IsValid)
         {
-            _statusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.InvalidCommand, parsed.ErrorMessage));
+            _statusChanged?.Invoke(string.Format(ChatConstants.ErrorMessages.InvalidCommand, parsed.ErrorMessage));
             return;
         }
 
@@ -51,7 +53,7 @@ public class CommandHandler
         }
         else
         {
-            _statusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.UnknownCommand, parsed.Command));
+            _statusChanged?.Invoke(string.Format(ChatConstants.ErrorMessages.UnknownCommand, parsed.Command));
         }
     }
 }

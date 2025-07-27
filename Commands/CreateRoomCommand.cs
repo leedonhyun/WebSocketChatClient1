@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 public class CreateRoomCommand : CommandBase
@@ -20,8 +22,8 @@ public class CreateRoomCommand : CommandBase
             return _client.CreateRoomAsync(roomName, description, isPrivate, password);
         }
         
-        _statusChanged(ClientConstants.UsageMessages.CreateRoomUsage);
-        _statusChanged(ClientConstants.UsageMessages.CreateRoomExample);
+        _statusChanged(ChatConstants.UsageMessages.CreateRoomUsage);
+        _statusChanged(ChatConstants.UsageMessages.CreateRoomExample);
         return Task.CompletedTask;
     }
 }

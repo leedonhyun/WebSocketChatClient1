@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 public class KickFromRoomCommand : CommandBase
@@ -18,7 +20,7 @@ public class KickFromRoomCommand : CommandBase
             return _client.KickFromRoomAsync(roomId, username);
         }
         
-        _statusChanged(ClientConstants.UsageMessages.KickUsage);
+        _statusChanged(ChatConstants.UsageMessages.KickUsage);
         return Task.CompletedTask;
     }
 }

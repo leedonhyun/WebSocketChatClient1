@@ -17,6 +17,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
+using WebSocketChatShared;
 
 
 
@@ -25,9 +26,9 @@ namespace WebSocketChatClient1.Client
 {
     public class ChatClient : IChatClient, IDisposable
     {
-        // ClientConstants
-        private const string DEFAULT_SERVER_URL = ClientConstants.DefaultServerUrl;
-        private const string ROOM_PREFIX = ClientConstants.RoomPrefix;
+        // ChatConstants
+        private const string DEFAULT_SERVER_URL = ChatConstants.DefaultServerUrl;
+        private const string ROOM_PREFIX = ChatConstants.RoomPrefix;
 
         private readonly IConnectionManager _connectionManager;
         private readonly IFileManager _fileManager;
@@ -76,13 +77,13 @@ namespace WebSocketChatClient1.Client
                 chatProc.MessageReceived += msg => MessageReceived?.Invoke(msg);
                 chatProc.RoomJoined += roomId => {
                     _currentRoom = roomId;
-                    StatusChanged?.Invoke(string.Format(ClientConstants.StatusMessages.RoomJoined, roomId));
+                    StatusChanged?.Invoke(string.Format(ChatConstants.StatusMessages.RoomJoined, roomId));
                 };
                 chatProc.RoomLeft += roomId => {
                     if (_currentRoom == roomId)
                     {
                         _currentRoom = null;
-                        StatusChanged?.Invoke(ClientConstants.StatusMessages.RoomLeft);
+                        StatusChanged?.Invoke(ChatConstants.StatusMessages.RoomLeft);
                     }
                 };
             }
@@ -129,26 +130,26 @@ namespace WebSocketChatClient1.Client
 
             // Fix 1: Ensure ConnectCommand implements ICommand from the correct namespace.
             // Fix 2: Pass aliases as string array, not a single string.
-            _commandHandler.RegisterCommand(new ConnectCommand(this, statusChange), new string[] { ClientConstants.Commands.Connect });
-            _commandHandler.RegisterCommand(new DisconnectCommand(this, statusChange), new string[] { ClientConstants.Commands.Disconnect });
-            _commandHandler.RegisterCommand(new SetUsernameCommand(this, statusChange), new string[] { ClientConstants.Commands.Username });
-            _commandHandler.RegisterCommand(new GetUserListCommand(this, statusChange), new string[] { ClientConstants.Commands.Users });
-            _commandHandler.RegisterCommand(new HelpCommand(this, statusChange), new string[] { ClientConstants.Commands.Help, ClientConstants.Commands.HelpAlt });
+            _commandHandler.RegisterCommand(new ConnectCommand(this, statusChange), new string[] { ChatConstants.Commands.Connect });
+            _commandHandler.RegisterCommand(new DisconnectCommand(this, statusChange), new string[] { ChatConstants.Commands.Disconnect });
+            _commandHandler.RegisterCommand(new SetUsernameCommand(this, statusChange), new string[] { ChatConstants.Commands.Username });
+            _commandHandler.RegisterCommand(new GetUserListCommand(this, statusChange), new string[] { ChatConstants.Commands.Users });
+            _commandHandler.RegisterCommand(new HelpCommand(this, statusChange), new string[] { ChatConstants.Commands.Help, ChatConstants.Commands.HelpAlt });
 
-            _commandHandler.RegisterCommand(new SendFileCommand(this, statusChange), new string[] { ClientConstants.Commands.Send });
-            _commandHandler.RegisterCommand(new AcceptFileCommand(this, statusChange), new string[] { ClientConstants.Commands.Accept });
-            _commandHandler.RegisterCommand(new RejectFileCommand(this, statusChange), new string[] { ClientConstants.Commands.Reject });
+            _commandHandler.RegisterCommand(new SendFileCommand(this, statusChange), new string[] { ChatConstants.Commands.Send });
+            _commandHandler.RegisterCommand(new AcceptFileCommand(this, statusChange), new string[] { ChatConstants.Commands.Accept });
+            _commandHandler.RegisterCommand(new RejectFileCommand(this, statusChange), new string[] { ChatConstants.Commands.Reject });
 
-            _commandHandler.RegisterCommand(new PrivateMessageCommand(this, statusChange), new string[] { ClientConstants.Commands.Msg,  ClientConstants.Commands.PrivateMessage });
-            _commandHandler.RegisterCommand(new SendRoomMessageCommand(this, statusChange), new string[] { ClientConstants.Commands.Room });
+            _commandHandler.RegisterCommand(new PrivateMessageCommand(this, statusChange), new string[] { ChatConstants.Commands.Msg,  ChatConstants.Commands.PrivateMessage });
+            _commandHandler.RegisterCommand(new SendRoomMessageCommand(this, statusChange), new string[] { ChatConstants.Commands.Room });
 
-            _commandHandler.RegisterCommand(new CreateRoomCommand(this, statusChange), new string[] { ClientConstants.Commands.Create, ClientConstants.Commands.CreateRoom });
-            _commandHandler.RegisterCommand(new JoinRoomCommand(this, statusChange), new string[] { ClientConstants.Commands.Join, ClientConstants.Commands.JoinRoom });
-            _commandHandler.RegisterCommand(new LeaveRoomCommand(this, statusChange), new string[] { ClientConstants.Commands.Leave, ClientConstants.Commands.LeaveRoom });
-            _commandHandler.RegisterCommand(new GetRoomListCommand(this, statusChange), new string[] { ClientConstants.Commands.Rooms, ClientConstants.Commands.ListRooms });
-            _commandHandler.RegisterCommand(new GetRoomMembersCommand(this, statusChange), new string[] { ClientConstants.Commands.Members, ClientConstants.Commands.RoomMembers });
-            _commandHandler.RegisterCommand(new InviteToRoomCommand(this, statusChange), new string[] { ClientConstants.Commands.Invite });
-            _commandHandler.RegisterCommand(new KickFromRoomCommand(this, statusChange), new string[] { ClientConstants.Commands.Kick });
+            _commandHandler.RegisterCommand(new CreateRoomCommand(this, statusChange), new string[] { ChatConstants.Commands.Create, ChatConstants.Commands.CreateRoom });
+            _commandHandler.RegisterCommand(new JoinRoomCommand(this, statusChange), new string[] { ChatConstants.Commands.Join, ChatConstants.Commands.JoinRoom });
+            _commandHandler.RegisterCommand(new LeaveRoomCommand(this, statusChange), new string[] { ChatConstants.Commands.Leave, ChatConstants.Commands.LeaveRoom });
+            _commandHandler.RegisterCommand(new GetRoomListCommand(this, statusChange), new string[] { ChatConstants.Commands.Rooms, ChatConstants.Commands.ListRooms });
+            _commandHandler.RegisterCommand(new GetRoomMembersCommand(this, statusChange), new string[] { ChatConstants.Commands.Members, ChatConstants.Commands.RoomMembers });
+            _commandHandler.RegisterCommand(new InviteToRoomCommand(this, statusChange), new string[] { ChatConstants.Commands.Invite });
+            _commandHandler.RegisterCommand(new KickFromRoomCommand(this, statusChange), new string[] { ChatConstants.Commands.Kick });
         }
 
         public async Task<bool> ConnectAsync(string serverUrl)
@@ -223,7 +224,7 @@ namespace WebSocketChatClient1.Client
         //private bool ValidateConnection()
         //{
         //    if (IsConnected) return true;
-        //    StatusChanged?.Invoke(ClientConstants.ErrorMessages.NotConnected);
+        //    StatusChanged?.Invoke(ChatConstants.ErrorMessages.NotConnected);
         //    return false;
         //}
 
@@ -292,7 +293,7 @@ namespace WebSocketChatClient1.Client
                             }
                             catch (JsonException ex)
                             {
-                                _logger.LogError(ex, ClientConstants.ErrorMessages.LogParseChatMessageFailed);
+                                _logger.LogError(ex, ChatConstants.ErrorMessages.LogParseChatMessageFailed);
                             }
                         }
                     }
@@ -300,7 +301,7 @@ namespace WebSocketChatClient1.Client
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ClientConstants.ErrorMessages.LogReceiveMessageError);
+                _logger.LogError(ex, ChatConstants.ErrorMessages.LogReceiveMessageError);
             }
         }
 
@@ -341,7 +342,7 @@ namespace WebSocketChatClient1.Client
                             }
                             catch (JsonException ex)
                             {
-                                _logger.LogError(ex, ClientConstants.ErrorMessages.LogParseFileMessageFailed);
+                                _logger.LogError(ex, ChatConstants.ErrorMessages.LogParseFileMessageFailed);
                             }
                         }
                     }
@@ -349,7 +350,7 @@ namespace WebSocketChatClient1.Client
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ClientConstants.ErrorMessages.LogReceiveFileError);
+                _logger.LogError(ex, ChatConstants.ErrorMessages.LogReceiveFileError);
             }
         }
 

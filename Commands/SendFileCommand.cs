@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 public class SendFileCommand : CommandBase
@@ -30,12 +32,12 @@ public class SendFileCommand : CommandBase
             return _client.SendFileAsync(filePath, targetUser, autoAccept, roomId);
         }
 
-        _statusChanged(ClientConstants.UsageMessages.SendUsage);
-        _statusChanged(ClientConstants.UsageMessages.SendExamplesHeader);
-        _statusChanged(ClientConstants.UsageMessages.SendExamplePublic);
-        _statusChanged(ClientConstants.UsageMessages.SendExampleUser);
-        _statusChanged(ClientConstants.UsageMessages.SendExampleRoom);
-        _statusChanged(ClientConstants.UsageMessages.SendExampleAuto);
+        _statusChanged(ChatConstants.UsageMessages.SendUsage);
+        _statusChanged(ChatConstants.UsageMessages.SendExamplesHeader);
+        _statusChanged(ChatConstants.UsageMessages.SendExamplePublic);
+        _statusChanged(ChatConstants.UsageMessages.SendExampleUser);
+        _statusChanged(ChatConstants.UsageMessages.SendExampleRoom);
+        _statusChanged(ChatConstants.UsageMessages.SendExampleAuto);
         return Task.CompletedTask;
     }
 }

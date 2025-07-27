@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 // Example: Send Private Message Command
@@ -21,9 +23,9 @@ public class PrivateMessageCommand : CommandBase
             return _client.SendPrivateMessageAsync(message, targetUser);
         }
         
-        _statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageUsage);
-        _statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageExample);
-        //_statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageAliases);
+        _statusChanged?.Invoke(ChatConstants.UsageMessages.PrivateMessageUsage);
+        _statusChanged?.Invoke(ChatConstants.UsageMessages.PrivateMessageExample);
+        //_statusChanged?.Invoke(ChatConstants.UsageMessages.PrivateMessageAliases);
         return Task.CompletedTask;
     }
 }

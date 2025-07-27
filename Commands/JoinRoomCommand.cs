@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 public class JoinRoomCommand : CommandBase
@@ -18,8 +20,8 @@ public class JoinRoomCommand : CommandBase
             return _client.JoinRoomAsync(roomId, password);
         }
         
-        _statusChanged(ClientConstants.UsageMessages.JoinRoomUsage);
-        _statusChanged(ClientConstants.UsageMessages.JoinRoomExample);
+        _statusChanged(ChatConstants.UsageMessages.JoinRoomUsage);
+        _statusChanged(ChatConstants.UsageMessages.JoinRoomExample);
         return Task.CompletedTask;
     }
 }

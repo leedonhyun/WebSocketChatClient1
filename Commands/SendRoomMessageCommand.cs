@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 public class SendRoomMessageCommand : CommandBase
@@ -24,12 +26,12 @@ public class SendRoomMessageCommand : CommandBase
             return _client.SendRoomMessageAsync(message, _client.CurrentRoom);
         }
         
-        _statusChanged(ClientConstants.UsageMessages.RoomMessageUsage);
-        _statusChanged(ClientConstants.UsageMessages.RoomMessageAltUsage);
-        _statusChanged(ClientConstants.UsageMessages.RoomMessageExample);
+        _statusChanged(ChatConstants.UsageMessages.RoomMessageUsage);
+        _statusChanged(ChatConstants.UsageMessages.RoomMessageAltUsage);
+        _statusChanged(ChatConstants.UsageMessages.RoomMessageExample);
         if (!string.IsNullOrEmpty(_client.CurrentRoom))
         {
-            _statusChanged(string.Format(ClientConstants.StatusMessages.CurrentRoomInfo, _client.CurrentRoom));
+            _statusChanged(string.Format(ChatConstants.StatusMessages.CurrentRoomInfo, _client.CurrentRoom));
         }
         return Task.CompletedTask;
     }

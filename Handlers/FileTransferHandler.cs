@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
+using WebSocketChatShared;
 
 namespace WebSocketChatClient1.Client.Handlers;
 
@@ -44,14 +45,14 @@ public class FileTransferHandler : IFileTransferHandler
     {
         if (!_isConnected())
         {
-            _statusChanged(ClientConstants.ErrorMessages.NotConnected);
+            _statusChanged(ChatConstants.ErrorMessages.NotConnected);
             return;
         }
 
         try
         {
             var uploadResult = await _fileManager.UploadFileAsync(filePath);
-            _statusChanged(string.Format(ClientConstants.StatusMessages.FileUploading, uploadResult.FileName, uploadResult.FileId));
+            _statusChanged(string.Format(ChatConstants.StatusMessages.FileUploading, uploadResult.FileName, uploadResult.FileId));
 
             var targetIdentity = _getFileTransferTarget(toUsername, roomId);
 
@@ -60,7 +61,7 @@ public class FileTransferHandler : IFileTransferHandler
             {
                 var uploadMessage = new FileTransferMessage
                 {
-                    Type = ClientConstants.MessageTypes.FileUpload,
+                    Type = ChatConstants.MessageTypes.FileUpload,
                     FileId = uploadResult.FileId,
                     FileInfo = new FileTransferInfo { Id = uploadResult.FileId, FileName = uploadResult.FileName, FileSize = uploadResult.FileSize, ContentType = uploadResult.ContentType, ToUsername = targetIdentity },
                     Data = uploadResult.Chunks[i],
@@ -70,24 +71,24 @@ public class FileTransferHandler : IFileTransferHandler
                 };
                 await SendFileMessageAsync(uploadMessage);
                 var progress = (double)(i + 1) / uploadResult.Chunks.Count * 100;
-                _statusChanged(string.Format(ClientConstants.StatusMessages.FileUploadProgress, uploadResult.FileName, progress));
+                _statusChanged(string.Format(ChatConstants.StatusMessages.FileUploadProgress, uploadResult.FileName, progress));
             }
 
             // Signal completion
             var completeMessage = new FileTransferMessage
             {
-                Type = ClientConstants.MessageTypes.FileUploadComplete,
+                Type = ChatConstants.MessageTypes.FileUploadComplete,
                 FileId = uploadResult.FileId,
                 FileInfo = new FileTransferInfo { Id = uploadResult.FileId, FileName = uploadResult.FileName, FileSize = uploadResult.FileSize, ContentType = uploadResult.ContentType, ToUsername = targetIdentity },
                 Timestamp = DateTime.UtcNow
             };
             await SendFileMessageAsync(completeMessage);
-            _statusChanged(string.Format(ClientConstants.StatusMessages.FileUploadComplete, uploadResult.FileName, uploadResult.FileId));
+            _statusChanged(string.Format(ChatConstants.StatusMessages.FileUploadComplete, uploadResult.FileName, uploadResult.FileId));
 
             // Send offer
             var offerMessage = new FileTransferMessage
             {
-                Type = autoAccept ? ClientConstants.MessageTypes.FileOfferAuto : ClientConstants.MessageTypes.FileOffer,
+                Type = autoAccept ? ChatConstants.MessageTypes.FileOfferAuto : ChatConstants.MessageTypes.FileOffer,
                 FileId = uploadResult.FileId,
                 FileInfo = new FileTransferInfo { Id = uploadResult.FileId, FileName = uploadResult.FileName, FileSize = uploadResult.FileSize, ContentType = uploadResult.ContentType, ToUsername = targetIdentity },
                 ToUsername = targetIdentity,
@@ -97,22 +98,22 @@ public class FileTransferHandler : IFileTransferHandler
 
             var targetDescription = !string.IsNullOrEmpty(roomId) ? $"room '{roomId}'" : $"user '{toUsername}'";
             var autoAcceptPrefix = autoAccept ? "Auto-accept " : "";
-            _statusChanged(string.Format(ClientConstants.StatusMessages.FileOfferSent, autoAcceptPrefix, targetDescription, uploadResult.FileName));
-            _statusChanged(string.Format(ClientConstants.StatusMessages.FileOfferInfo, uploadResult.FileId));
+            _statusChanged(string.Format(ChatConstants.StatusMessages.FileOfferSent, autoAcceptPrefix, targetDescription, uploadResult.FileName));
+            _statusChanged(string.Format(ChatConstants.StatusMessages.FileOfferInfo, uploadResult.FileId));
         }
         catch (FileNotFoundException ex)
         {
-            _statusChanged(string.Format(ClientConstants.ErrorMessages.FileNotFound, filePath));
+            _statusChanged(string.Format(ChatConstants.ErrorMessages.FileNotFound, filePath));
             _logger.LogError(ex, "File not found when sending file: {FilePath}", filePath);
         }
         catch (UnauthorizedAccessException ex)
         {
-            _statusChanged(string.Format(ClientConstants.ErrorMessages.AccessDenied, filePath));
+            _statusChanged(string.Format(ChatConstants.ErrorMessages.AccessDenied, filePath));
             _logger.LogError(ex, "Access denied when reading file: {FilePath}", filePath);
         }
         catch (Exception ex)
         {
-            _statusChanged(string.Format(ClientConstants.ErrorMessages.FileSendError, ex.Message));
+            _statusChanged(string.Format(ChatConstants.ErrorMessages.FileSendError, ex.Message));
             _logger.LogError(ex, "Error sending file: {FilePath}", filePath);
         }
     }
@@ -123,12 +124,12 @@ public class FileTransferHandler : IFileTransferHandler
 
         var acceptMessage = new FileTransferMessage
         {
-            Type = ClientConstants.MessageTypes.FileAccept,
+            Type = ChatConstants.MessageTypes.FileAccept,
             FileId = fileId,
             Timestamp = DateTime.UtcNow
         };
         await SendFileMessageAsync(acceptMessage);
-        _statusChanged(string.Format(ClientConstants.StatusMessages.FileAccepted, fileId));
+        _statusChanged(string.Format(ChatConstants.StatusMessages.FileAccepted, fileId));
     }
 
     public async Task RejectFileAsync(string fileId)
@@ -137,12 +138,12 @@ public class FileTransferHandler : IFileTransferHandler
 
         var rejectMessage = new FileTransferMessage
         {
-            Type = ClientConstants.MessageTypes.FileReject,
+            Type = ChatConstants.MessageTypes.FileReject,
             FileId = fileId,
             Timestamp = DateTime.UtcNow
         };
         await SendFileMessageAsync(rejectMessage);
-        _statusChanged(string.Format(ClientConstants.StatusMessages.FileRejected, fileId));
+        _statusChanged(string.Format(ChatConstants.StatusMessages.FileRejected, fileId));
     }
 
     private async Task SendFileMessageAsync(FileTransferMessage message)

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
+using WebSocketChatShared;
+
 namespace WebSocketChatClient1.Client.Commands;
 
 // Example: Help Command
@@ -12,7 +14,7 @@ public class HelpCommand : CommandBase
 
     public override Task ExecuteAsync(string[] args, Dictionary<string, object> options)
     {
-        foreach (var line in ClientConstants.HelpText)
+        foreach (var line in ChatConstants.HelpText)
         {
             _statusChanged?.Invoke(line);
         }
