@@ -1,7 +1,7 @@
 ﻿using WebSocketChatClient1.Client.Connection;
 using WebSocketChatClient1.Client.Processors;
 using WebSocketChatClient1.Client.Services;
-using WebSocketChatClient1.Models;
+using WebSocketChatShared.Models;
 
 using Microsoft.Extensions.DependencyInjection;
 

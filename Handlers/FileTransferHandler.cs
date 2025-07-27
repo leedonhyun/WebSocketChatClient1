@@ -1,6 +1,6 @@
 using WebSocketChatClient1.Client.Connection;
 using WebSocketChatClient1.Client.Interfaces;
-using WebSocketChatClient1.Models;
+using WebSocketChatShared.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;

@@ -3,7 +3,7 @@ using WebSocketChatClient1.Client.Connection;
 using WebSocketChatClient1.Client.Handlers;
 using WebSocketChatClient1.Client.Interfaces;
 using WebSocketChatClient1.Client.Processors;
-using WebSocketChatClient1.Models;
+using WebSocketChatShared.Models;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

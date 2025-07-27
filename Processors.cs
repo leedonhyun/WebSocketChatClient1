@@ -1,4 +1,4 @@
-﻿using WebSocketChatClient1.Models;
+﻿using WebSocketChatShared.Models;
 
 using Microsoft.Extensions.Logging;
 
