@@ -1,9 +1,9 @@
-﻿using ChatSystem.Client.Commands;
-using ChatSystem.Client.Connection;
-using ChatSystem.Client.Handlers;
-using ChatSystem.Client.Interfaces;
-using ChatSystem.Client.Processors;
-using ChatSystem.Models;
+﻿using WebSocketChatClient1.Client.Commands;
+using WebSocketChatClient1.Client.Connection;
+using WebSocketChatClient1.Client.Handlers;
+using WebSocketChatClient1.Client.Interfaces;
+using WebSocketChatClient1.Client.Processors;
+using WebSocketChatClient1.Models;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -21,7 +21,7 @@ using WebSocketChatClient1.Interfaces;
 
 
 // ==================== 메인 클라이언트 클래스 ====================
-namespace ChatSystem.Client
+namespace WebSocketChatClient1.Client
 {
     public class ChatClient : IChatClient, IDisposable
     {
@@ -139,7 +139,7 @@ namespace ChatSystem.Client
             _commandHandler.RegisterCommand(new AcceptFileCommand(this, statusChange), new string[] { ClientConstants.Commands.Accept });
             _commandHandler.RegisterCommand(new RejectFileCommand(this, statusChange), new string[] { ClientConstants.Commands.Reject });
 
-            _commandHandler.RegisterCommand(new PrivateMessageCommand(this, statusChange), new string[] { ClientConstants.Commands.Msg, ClientConstants.Commands.Pm, ClientConstants.Commands.Private, ClientConstants.Commands.PrivateMessage });
+            _commandHandler.RegisterCommand(new PrivateMessageCommand(this, statusChange), new string[] { ClientConstants.Commands.Msg,  ClientConstants.Commands.PrivateMessage });
             _commandHandler.RegisterCommand(new SendRoomMessageCommand(this, statusChange), new string[] { ClientConstants.Commands.Room });
 
             _commandHandler.RegisterCommand(new CreateRoomCommand(this, statusChange), new string[] { ClientConstants.Commands.Create, ClientConstants.Commands.CreateRoom });

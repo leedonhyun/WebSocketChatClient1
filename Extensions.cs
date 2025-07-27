@@ -1,7 +1,7 @@
-﻿using ChatSystem.Client.Connection;
-using ChatSystem.Client.Processors;
-using ChatSystem.Client.Services;
-using ChatSystem.Models;
+﻿using WebSocketChatClient1.Client.Connection;
+using WebSocketChatClient1.Client.Processors;
+using WebSocketChatClient1.Client.Services;
+using WebSocketChatClient1.Models;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Extensions;
+namespace WebSocketChatClient1.Client.Extensions;
 
 public static class ServiceCollectionExtensions
 {

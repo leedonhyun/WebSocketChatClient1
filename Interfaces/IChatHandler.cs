@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace ChatSystem.Client.Interfaces;
+namespace WebSocketChatClient1.Client.Interfaces;
 
 /// <summary>
 /// Defines operations for handling chat messages and room management.

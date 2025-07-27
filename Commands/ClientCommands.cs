@@ -150,7 +150,7 @@ public class PrivateMessageCommand : CommandBase
         
         _statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageUsage);
         _statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageExample);
-        _statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageAliases);
+        //_statusChanged?.Invoke(ClientConstants.UsageMessages.PrivateMessageAliases);
         return Task.CompletedTask;
     }
 }

@@ -1,5 +1,5 @@
-using ChatSystem.Client.Models;
-using ChatSystem.Models;
+using WebSocketChatClient1.Client.Models;
+using WebSocketChatClient1.Models;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;

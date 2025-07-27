@@ -1,4 +1,4 @@
-﻿namespace ChatSystem.Client;
+﻿namespace WebSocketChatClient1.Client;
 
 /// <summary>
 /// Contains constant values for the Chat Client.
@@ -60,8 +60,8 @@ public static class ClientConstants
         public const string Accept = "accept";
         public const string Reject = "reject";
         public const string Msg = "msg";
-        public const string Pm = "pm";
-        public const string Private = "private";
+        //public const string Pm = "pm";
+        //public const string Private = "private";
         public const string PrivateMessage = "privateMessage";
         public const string Create = "create";
         public const string CreateRoom = "createroom";
@@ -137,7 +137,7 @@ public static class ClientConstants
         public const string SendExampleAuto = "  /send -a myfile.txt john - Auto-accept for user 'john'";
         public const string PrivateMessageUsage = "Usage: /msg <username> <message>";
         public const string PrivateMessageExample = "  Example: /msg john Hello there!";
-        public const string PrivateMessageAliases = "  Aliases: /pm, /private, /privateMessage";
+        //public const string PrivateMessageAliases = "  Aliases: /pm, /private, /privateMessage";
         public const string CreateRoomUsage = "Usage: /create <roomname> [description] [-private] [-password <pwd>]";
         public const string CreateRoomExample = "  Example: /create myroom \"My cool room\" -private -password secret123";
         public const string JoinRoomUsage = "Usage: /join <roomid> [password]";
@@ -227,8 +227,8 @@ public static class ClientConstants
             "",
             "Chat Commands:",
             "  /msg <user> <message> - Send private message",
-            "  /pm <user> <message> - Send private message (alias)",
-            "  /private <user> <message> - Send private message (alias)",
+            //"  /pm <user> <message> - Send private message (alias)",
+            //"  /private <user> <message> - Send private message (alias)",
             "  /privateMessage <user> <message> - Send private message (alias)",
             "  /room <roomid> <message> - Send message to specific room",
             "  /room <message> - Send message to current room (if joined)",

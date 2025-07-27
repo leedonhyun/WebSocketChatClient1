@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ChatSystem.Client.Models;
+namespace WebSocketChatClient1.Client.Models;
 
 public class FileUploadResult
 {

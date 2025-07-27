@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Commands;
+namespace WebSocketChatClient1.Client.Commands;
 
 /// <summary>
 /// Handles parsing and execution of commands.
@@ -28,7 +28,7 @@ public class CommandHandler
     {
         foreach (var alias in aliases)
         {
-            _commands[alias] = command;
+            _commands[alias.ToLowerInvariant()] = command;
         }
     }
 
@@ -38,13 +38,14 @@ public class CommandHandler
     public async Task ProcessCommandAsync(string input)
     {
         var parsed = _commandParser.Parse(input);
+        //var (commandName, args) = _commandParser.Parse(input);
         if (!parsed.IsValid)
         {
             _statusChanged?.Invoke(string.Format(ClientConstants.ErrorMessages.InvalidCommand, parsed.ErrorMessage));
             return;
         }
 
-        if (_commands.TryGetValue(parsed.Command, out var command))
+        if (_commands.TryGetValue(parsed.Command.ToLowerInvariant(), out var command))
         {
             await command.ExecuteAsync(parsed.Arguments, parsed.Options);
         }

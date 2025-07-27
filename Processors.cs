@@ -1,4 +1,4 @@
-﻿using ChatSystem.Models;
+﻿using WebSocketChatClient1.Models;
 
 using Microsoft.Extensions.Logging;
 
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Processors;
+namespace WebSocketChatClient1.Client.Processors;
 
 public class ChatMessageProcessor : IMessageProcessor<ChatMessage>
 {

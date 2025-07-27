@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using WebSocketChatClient1.Interfaces;
 
 // ==================== 연결 관리자 ====================
-namespace ChatSystem.Client.Connection;
+namespace WebSocketChatClient1.Client.Connection;
 
 public class WebSocketConnectionManager : IConnectionManager
 {

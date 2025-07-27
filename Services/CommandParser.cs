@@ -1,9 +1,9 @@
-using ChatSystem.Client.Models;
+using WebSocketChatClient1.Client.Models;
 
 using System.Text;
 
 using WebSocketChatClient1.Interfaces;
-namespace ChatSystem.Client.Services;
+namespace WebSocketChatClient1.Client.Services;
 public class CommandParser : ICommandParser
 {
     public ParsedCommand Parse(string input)

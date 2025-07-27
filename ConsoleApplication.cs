@@ -1,4 +1,4 @@
-﻿using ChatSystem.Models;
+﻿using WebSocketChatClient1.Models;
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Console;
+namespace WebSocketChatClient1.Client.Console;
 
 public class ConsoleApplication
 {

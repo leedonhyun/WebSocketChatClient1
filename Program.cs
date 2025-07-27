@@ -1,12 +1,12 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 
-using ChatSystem.Client.Extensions;
+using WebSocketChatClient1.Client.Extensions;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace ChatSystem.Client.Console;
+namespace WebSocketChatClient1.Client.Console;
 
 
 public class Program

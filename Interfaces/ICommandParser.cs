@@ -1,4 +1,4 @@
-using ChatSystem.Client.Models;
+using WebSocketChatClient1.Client.Models;
 
 namespace WebSocketChatClient1.Interfaces;
 

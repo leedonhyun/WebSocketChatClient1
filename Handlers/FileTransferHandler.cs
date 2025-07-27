@@ -1,6 +1,6 @@
-using ChatSystem.Client.Connection;
-using ChatSystem.Client.Interfaces;
-using ChatSystem.Models;
+using WebSocketChatClient1.Client.Connection;
+using WebSocketChatClient1.Client.Interfaces;
+using WebSocketChatClient1.Models;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Handlers;
+namespace WebSocketChatClient1.Client.Handlers;
 
 /// <summary>
 /// Handles the logic for sending, accepting, and rejecting file transfers.

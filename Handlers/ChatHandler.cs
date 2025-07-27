@@ -1,6 +1,6 @@
-using ChatSystem.Client.Connection;
-using ChatSystem.Client.Interfaces;
-using ChatSystem.Models;
+using WebSocketChatClient1.Client.Connection;
+using WebSocketChatClient1.Client.Interfaces;
+using WebSocketChatClient1.Models;
 using System;
 using System.Text;
 using System.Text.Json;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Handlers;
+namespace WebSocketChatClient1.Client.Handlers;
 
 /// <summary>
 /// Handles the logic for chat messages and room management.
@@ -51,7 +51,10 @@ public class ChatHandler : IChatHandler
     public Task SendPrivateMessageAsync(string message, string toUsername)
     {
         if (!_isConnected()) return Task.CompletedTask;
-        var chatMessage = new ChatMessage { Type = ClientConstants.MessageTypes.PrivateMessage, Message = $"@{toUsername}: {message}", Timestamp = DateTime.UtcNow };
+        var chatMessage = new ChatMessage { Type = ClientConstants.MessageTypes.PrivateMessage,
+            ToUsername = toUsername,
+            Message = message,
+            Timestamp = DateTime.UtcNow };
         _statusChanged(string.Format(ClientConstants.StatusMessages.PrivateMessageSent, toUsername));
         return SendChatMessageAsync(chatMessage);
     }
@@ -59,7 +62,8 @@ public class ChatHandler : IChatHandler
     public Task SendRoomMessageAsync(string message, string roomId)
     {
         if (!_isConnected()) return Task.CompletedTask;
-        var chatMessage = new ChatMessage { Type = ClientConstants.MessageTypes.Chat, Message = $"roomMessage {roomId} {message}", Username = _getUsername(), Timestamp = DateTime.UtcNow };
+        var chatMessage = new ChatMessage { Type = ClientConstants.MessageTypes.Chat,
+            Message = $"roomMessage {roomId} {message}", Username = _getUsername(), Timestamp = DateTime.UtcNow };
         _statusChanged(string.Format(ClientConstants.StatusMessages.RoomMessageSent, roomId, message));
         return SendChatMessageAsync(chatMessage);
     }

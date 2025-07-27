@@ -1,4 +1,4 @@
-﻿using ChatSystem.Client.Models;
+﻿using WebSocketChatClient1.Client.Models;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 using WebSocketChatClient1.Interfaces;
 
-namespace ChatSystem.Client.Services;
+namespace WebSocketChatClient1.Client.Services;
 
 
 public class ChatRoomManager : IChatRoomManager
