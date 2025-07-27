@@ -13,6 +13,12 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
+        var cts = new CancellationTokenSource();
+        AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) =>
+        {
+            cts.Cancel();
+        };
+
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureServices((context, services) =>
             {
@@ -22,6 +28,6 @@ public class Program
             .Build();
 
         var app = host.Services.GetRequiredService<ConsoleApplication>();
-        await app.RunAsync();
+        await app.RunAsync(cts.Token);
     }
 }

@@ -1,167 +1,134 @@
-﻿using WebSocketChatShared.Models;
+﻿using Microsoft.Extensions.Logging;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
+using WebSocketChatClient1.Client;
 using WebSocketChatClient1.Interfaces;
 
-namespace WebSocketChatClient1.Client.Console;
+using WebSocketChatShared.Models;
 
-public class ConsoleApplication
+namespace WebSocketChatClient1
 {
-    private readonly IChatClient _chatClient;
-    private readonly ChatClient _chatClientImpl; // 구체적인 타입 캐시
-    private readonly Dictionary<string, FileTransferInfo> _pendingFiles = new();
-
-    public ConsoleApplication(IChatClient chatClient)
+    public class ConsoleApplication
     {
-        _chatClient = chatClient;
-        _chatClientImpl = (ChatClient)chatClient; // 한 번만 캐스팅
+        private readonly IChatClient _chatClient;
+        private readonly ILogger<ConsoleApplication> _logger;
 
-        _chatClient.MessageReceived += OnMessageReceived;
-        _chatClient.StatusChanged += OnStatusChanged;
-        _chatClient.FileOfferReceived += OnFileOfferReceived;
-        _chatClient.FileTransferProgress += OnFileTransferProgress;
-    }
+        public ConsoleApplication(IChatClient chatClient, ILogger<ConsoleApplication> logger)
+        {
+            _chatClient = chatClient;
+            _logger = logger;
 
-    public async Task RunAsync()
-    {
-        System.Console.WriteLine(ClientConstants.ConsoleUI.WelcomeHeader);
-        foreach (var line in ClientConstants.ConsoleUI.HelpText)
-        {
-            System.Console.WriteLine(line);
-        }
-        System.Console.WriteLine();
-        System.Console.WriteLine(ClientConstants.ConsoleUI.Note);
-        if (!string.IsNullOrEmpty(_chatClient.CurrentRoom))
-        {
-            System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.CurrentRoomInfo, _chatClient.CurrentRoom));
-        }
-        System.Console.WriteLine();
-
-        while (true)
-        {
-            // 현재 방 상태를 프롬프트에 표시
-            var prompt = "";
-            if (_chatClient.IsConnected)
+            if (_chatClient is ChatClient client)
             {
-                if (!string.IsNullOrEmpty(_chatClient.CurrentRoom))
+                client.MessageReceived += OnMessageReceived;
+                client.StatusChanged += OnStatusChanged;
+                client.FileOfferReceived += OnFileOfferReceived;
+                client.FileTransferProgress += OnFileTransferProgress;
+            }
+        }
+
+        public async Task RunAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Chat Client started. Type '/help' for a list of commands.");
+
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                // Display prompt with username
+                var prompt = GetPrompt();
+                Console.Write(prompt);
+
+                var input = await Task.Run(Console.ReadLine, cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(input))
+                    continue;
+
+                if (input.StartsWith("/"))
                 {
-                    prompt = string.Format(ClientConstants.ConsoleUI.PromptRoomFormat, _chatClient.CurrentRoom);
+                    if (_chatClient is ChatClient client)
+                    {
+                        await client.ProcessCommandAsync(input);
+                    }
                 }
                 else
                 {
-                    prompt = ClientConstants.ConsoleUI.PromptPublic;
+                    await _chatClient.SendMessageAsync(input);
                 }
             }
-            else
-            {
-                prompt = ClientConstants.ConsoleUI.PromptDisconnected;
-            }
+        }
 
-            System.Console.Write(prompt);
-            var input = System.Console.ReadLine();
-            if (string.IsNullOrEmpty(input)) continue;
+        private string GetPrompt()
+        {
+            var roomIndicator = string.IsNullOrEmpty(_chatClient.CurrentRoom) ? "public" : $"room:{_chatClient.CurrentRoom}";
+            var username = string.IsNullOrEmpty(_chatClient.Username) ? "guest" : _chatClient.Username;
+            return $"{roomIndicator}/{username}> ";
+        }
 
-            if (input.StartsWith("/"))
+        private void OnMessageReceived(ChatMessage message)
+        {
+            ClearCurrentConsoleLine();
+            var displayMessage = "";
+            switch (message.Type)
             {
-                if (input.Equals(ClientConstants.Commands.Quit, StringComparison.OrdinalIgnoreCase))
-                {
-                    await _chatClient.DisconnectAsync();
+                case "chat":
+                    displayMessage = $"[{message.Timestamp:HH:mm:ss}] {message.Username}: {message.Message}";
                     break;
-                }
-
-                await _chatClientImpl.ProcessCommandAsync(input);
+                case "privateChat":
+                    displayMessage = $"[{message.Timestamp:HH:mm:ss}] (private) {message.Username} to {message.ToUsername}: {message.Message}";
+                    break;
+                case "groupChat":
+                case "roomChat":
+                    displayMessage = $"[{message.Timestamp:HH:mm:ss}] (room: {message.RoomId}) {message.Username}: {message.Message}";
+                    break;
+                case "system":
+                    displayMessage = $"[{message.Timestamp:HH:mm:ss}] [SYSTEM] {message.Message}";
+                    break;
+                case "error":
+                    displayMessage = $"[{message.Timestamp:HH:mm:ss}] [ERROR] {message.Message}";
+                    break;
+                default:
+                    displayMessage = $"[{message.Timestamp:HH:mm:ss}] [UNHANDLED:{message.Type}] {message.Username}: {message.Message}";
+                    break;
             }
-            else
+            Console.WriteLine(displayMessage);
+            Console.Write(GetPrompt());
+        }
+
+        private void OnStatusChanged(string status)
+        {
+            ClearCurrentConsoleLine();
+            Console.WriteLine($"[STATUS] {status}");
+            Console.Write(GetPrompt());
+        }
+
+        private void OnFileOfferReceived(FileTransferInfo offer)
+        {
+            ClearCurrentConsoleLine();
+            Console.WriteLine($"File offer from {offer.FromUsername}: {offer.FileName} ({offer.FileSize} bytes).");
+            Console.WriteLine($"Type '/accept {offer.Id}' or '/reject {offer.Id}'.");
+            Console.Write(GetPrompt());
+        }
+
+        private void OnFileTransferProgress(string fileId, int sent, int total)
+        {
+            ClearCurrentConsoleLine();
+            var percentage = total > 0 ? (int)((double)sent / total * 100) : 0;
+            Console.Write($"File transfer progress for {fileId}: {sent}/{total} bytes ({percentage}%)");
+            if (sent == total)
             {
-                if (_chatClient.IsConnected)
-                {
-                    // Check if user is in a room and wants to send to current room
-                    if (!string.IsNullOrEmpty(_chatClient.CurrentRoom))
-                    {
-                        await _chatClientImpl.SendRoomMessageAsync(input, _chatClient.CurrentRoom);
-                    }
-                    else
-                    {
-                        await _chatClient.SendMessageAsync(input);
-                    }
-                }
-                else
-                    System.Console.WriteLine(ClientConstants.ErrorMessages.NotConnectedSimple);
+                Console.WriteLine(); // New line on completion
             }
+            Console.Write(GetPrompt());
         }
-    }
 
-    private static void OnMessageReceived(ChatMessage message)
-    {
-        var timestamp = message.Timestamp.ToString("HH:mm:ss");
-        switch (message.Type)
+        private static void ClearCurrentConsoleLine()
         {
-            case ClientConstants.MessageTypes.System:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.System, timestamp, message.Message));
-                break;
-            case ClientConstants.MessageTypes.Chat:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Chat, timestamp, message.Username, message.Message));
-                break;
-            case ClientConstants.MessageTypes.PrivateMessage:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Private, timestamp, message.Username, message.Message));
-                break;
-            case ClientConstants.MessageTypes.RoomMessage:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Room, timestamp, message.Username, message.Message));
-                break;
-            case ClientConstants.MessageTypes.UserList:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.UserList, timestamp, message.Message));
-                break;
-            case ClientConstants.MessageTypes.RoomList:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomList, timestamp, message.Message));
-                break;
-            case ClientConstants.MessageTypes.RoomMembers:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomMembers, timestamp, message.Message));
-                break;
-            case ClientConstants.MessageTypes.RoomJoined:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomJoined, timestamp, message.Message));
-                break;
-            case ClientConstants.MessageTypes.RoomLeft:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomLeft, timestamp, message.Message));
-                break;
-            case ClientConstants.MessageTypes.RoomCreated:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.RoomCreated, timestamp, message.Message));
-                break;
-            default:
-                System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.MessageFormats.Chat, timestamp, message.Username, message.Message));
-                break;
-        }
-    }
-
-    private static void OnStatusChanged(string status)
-    {
-        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.StatusFormat, status));
-    }
-
-    private void OnFileOfferReceived(FileTransferInfo fileInfo)
-    {
-        _pendingFiles[fileInfo.Id] = fileInfo;
-
-        System.Console.WriteLine(ClientConstants.ConsoleUI.FileOfferHeader);
-        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferFrom, fileInfo.FromUsername));
-        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferFile, fileInfo.FileName));
-        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferSize, fileInfo.FileSize));
-        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferId, fileInfo.Id));
-        System.Console.WriteLine(ClientConstants.ConsoleUI.FileOfferReady);
-        System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileOfferInstructions, fileInfo.Id));
-        System.Console.WriteLine();
-    }
-
-    private void OnFileTransferProgress(string fileId, int chunkIndex, int totalChunks)
-    {
-        if (_pendingFiles.TryGetValue(fileId, out var fileInfo))
-        {
-            var progress = (double)(chunkIndex + 1) / totalChunks * 100;
-            System.Console.WriteLine(string.Format(ClientConstants.ConsoleUI.FileTransferProgress, fileInfo.FileName, progress, chunkIndex + 1, totalChunks));
+            int currentLineCursor = Console.CursorTop;
+            Console.SetCursorPosition(0, Console.CursorTop);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, currentLineCursor);
         }
     }
 }
